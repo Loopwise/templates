@@ -1,0 +1,13 @@
+{
+  "name": "loopwise-oauth-minimal",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx index.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0"
+  }
+}
