@@ -1,6 +1,6 @@
 # Loopwise Connect Templates
 
-Official integration templates for [Loopwise Connect](https://connect.loopwise.com) OAuth 2.0.
+Official integration templates for Loopwise Connect OAuth 2.0.
 
 Each school on Loopwise acts as an independent OAuth 2.0 authorization server. These templates show how to integrate with it using different tech stacks.
 
