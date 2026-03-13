@@ -1,0 +1,20 @@
+# .dev.vars — local secrets for `wrangler dev`.
+# Copy this file to .dev.vars and fill in real values.
+# Never commit .dev.vars to source control.
+
+# The full domain of your Loopwise school (no trailing slash).
+# Example: https://yourschool.myteachify.com
+LOOPWISE_SCHOOL_DOMAIN=https://yourschool.myteachify.com
+
+# OAuth 2.0 client credentials issued by Loopwise Connect.
+LOOPWISE_CLIENT_ID=your_client_id_here
+LOOPWISE_CLIENT_SECRET=your_client_secret_here
+
+# A long random string used to sign session cookies.
+# Generate with: openssl rand -hex 32
+SESSION_SECRET=replace_with_a_random_64_char_hex_string
+
+# The public URL of this Worker (used to build the redirect_uri).
+# In production this will be your workers.dev subdomain or custom domain.
+# Example: https://loopwise-connect-example.yourname.workers.dev
+APP_BASE_URL=http://localhost:8787

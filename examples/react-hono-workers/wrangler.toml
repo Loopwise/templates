@@ -1,0 +1,19 @@
+name = "loopwise-connect-example"
+main = "src/index.tsx"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Serve the built React SPA as static assets.
+# Wrangler will automatically serve files from ./dist/client
+# for any request that does not match a Worker route.
+[assets]
+directory = "./dist/client"
+
+# KV namespace for session storage.
+# Run `wrangler kv namespace create SESSIONS` to create the namespace,
+# then paste the resulting id below.
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "YOUR_KV_NAMESPACE_ID"
+# Uncomment the line below when using `wrangler dev` locally:
+# preview_id = "YOUR_KV_NAMESPACE_PREVIEW_ID"
