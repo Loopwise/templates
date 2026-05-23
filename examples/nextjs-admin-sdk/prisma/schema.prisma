@@ -17,7 +17,9 @@ datasource db {
 
 model User {
   id            String   @id
-  name          String
+  // Nullable per better-auth's adapter spec — some OAuth providers
+  // return a profile without `name`, and we shouldn't fail sign-up.
+  name          String?
   email         String   @unique
   emailVerified Boolean  @default(false)
   image         String?
@@ -44,6 +46,10 @@ model Session {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // better-auth queries sessions by userId on every request; index it
+  // so this stays O(log n) once you have real volume.
+  @@index([userId])
 }
 
 model Account {
@@ -65,6 +71,9 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([providerId, accountId])
+  // For "list this user's linked OAuth accounts" lookups during sign-in
+  // + token refresh paths.
+  @@index([userId])
 }
 
 model Verification {
@@ -74,4 +83,7 @@ model Verification {
   expiresAt  DateTime
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  // Email verification + password reset flows query by identifier.
+  @@index([identifier])
 }
