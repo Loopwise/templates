@@ -19,10 +19,8 @@
 import { betterAuth, type BetterAuthOptions } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { getLoopwiseRedirectURI, loopwise } from '@loopwise/admin-sdk/better-auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './db';
 import { required } from './env';
-
-const prisma = new PrismaClient();
 
 const BETTER_AUTH_URL = required('BETTER_AUTH_URL');
 const LOOPWISE_BASE_URL = required('LOOPWISE_BASE_URL');
