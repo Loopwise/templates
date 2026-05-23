@@ -16,18 +16,9 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { getLoopwiseRedirectURI, loopwise } from '@loopwise/admin-sdk/better-auth';
 import { PrismaClient } from '@prisma/client';
+import { required } from './env';
 
 const prisma = new PrismaClient();
-
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(
-      `Missing required env: ${name}. Copy .env.example → .env.local and fill it in.`,
-    );
-  }
-  return value;
-}
 
 const BETTER_AUTH_URL = required('BETTER_AUTH_URL');
 const LOOPWISE_CLIENT_ID = required('LOOPWISE_CLIENT_ID');

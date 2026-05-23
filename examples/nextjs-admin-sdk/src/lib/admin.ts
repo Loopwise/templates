@@ -16,8 +16,9 @@
 
 import { createAdminClient, type LoopwiseAdmin } from '@loopwise/admin-sdk';
 import { auth } from './auth';
+import { required } from './env';
 
-const LOOPWISE_BASE_URL = process.env.LOOPWISE_BASE_URL!;
+const LOOPWISE_BASE_URL = required('LOOPWISE_BASE_URL');
 
 export async function getAdminClient(
   requestHeaders: Headers,
