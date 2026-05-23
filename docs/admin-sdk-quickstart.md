@@ -58,7 +58,16 @@ import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { getLoopwiseRedirectURI, loopwise } from '@loopwise/admin-sdk/better-auth';
 import { PrismaClient } from '@prisma/client';
 
-const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL!; // e.g. http://localhost:3000
+// Throw a clear, actionable error if a required env var is missing —
+// preferable to `process.env.X!` blowing up later with a cryptic
+// `Cannot read properties of undefined` inside better-auth.
+function required(name: string): string {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing required env: ${name}`);
+  return v;
+}
+
+const BETTER_AUTH_URL = required('BETTER_AUTH_URL'); // e.g. http://localhost:3000
 
 // Log the redirect URI you need to register on the OAuth client.
 // Note the `/oauth2/` segment — that's specific to better-auth's
@@ -70,14 +79,14 @@ console.log(
 
 export const auth = betterAuth({
   baseURL: BETTER_AUTH_URL,
-  secret: process.env.BETTER_AUTH_SECRET!,
+  secret: required('BETTER_AUTH_SECRET'),
   database: prismaAdapter(new PrismaClient(), { provider: 'sqlite' }),
 
   plugins: [
     loopwise({
-      clientId: process.env.LOOPWISE_CLIENT_ID!,
-      clientSecret: process.env.LOOPWISE_CLIENT_SECRET!,
-      baseURL: process.env.LOOPWISE_BASE_URL!,   // e.g. https://demo.teachify.tw
+      clientId: required('LOOPWISE_CLIENT_ID'),
+      clientSecret: required('LOOPWISE_CLIENT_SECRET'),
+      baseURL: required('LOOPWISE_BASE_URL'),   // e.g. https://demo.teachify.tw
 
       // Default scopes are `openid profile email` (enough for SSO).
       // To call admin GraphQL, add the scopes you need AND enable
@@ -87,6 +96,12 @@ export const auth = betterAuth({
   ],
 });
 ```
+
+> The full template at [`examples/nextjs-admin-sdk`](../examples/nextjs-admin-sdk)
+> takes this one step further: it makes `LOOPWISE_CLIENT_ID` /
+> `LOOPWISE_CLIENT_SECRET` optional at boot so the dev server can start
+> and print the redirect URI before the OAuth client exists. For a
+> single-file quickstart, requiring them up front is clearer.
 
 ### 4. Fill your `.env`
 

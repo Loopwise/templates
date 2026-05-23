@@ -10,9 +10,10 @@ export function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   if (!sessionCookie) {
     const url = new URL('/', request.url);
-    // Preserve query string + hash so a deep-link with filters/pagination
-    // (e.g. /dashboard/members?role=teaching_assistant&page=2) survives the
-    // sign-in detour and lands back at the exact same view.
+    // Preserve query string so a deep-link with filters/pagination
+    // (e.g. /dashboard/members?role=teaching_assistant&page=2) survives
+    // the sign-in detour. Hash fragments aren't recoverable here —
+    // browsers don't send them to the server, so they're lost regardless.
     url.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }

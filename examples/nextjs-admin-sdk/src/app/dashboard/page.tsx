@@ -1,8 +1,11 @@
 /**
  * Dashboard home (`/dashboard`).
  *
- * Protected by `src/middleware.ts` — by the time this renders, a session
- * is guaranteed. Shows the signed-in user's info + links to the SDK demos.
+ * The middleware does a cheap session-cookie presence check at the edge
+ * to filter most unauthenticated traffic, but the cookie can be expired
+ * or invalid by the time this page runs — so we still call
+ * `getSession()` and redirect on null. Treat the middleware as a
+ * coarse pre-filter, not a guarantee.
  */
 
 import Link from 'next/link';
