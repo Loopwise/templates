@@ -5,7 +5,6 @@ out
 .env.local
 .env*.local
 *.tsbuildinfo
-next-env.d.ts
 dev.db
 dev.db-journal
 prisma/generated
