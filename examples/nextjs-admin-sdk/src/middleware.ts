@@ -10,7 +10,10 @@ export function middleware(request: NextRequest) {
   const sessionCookie = getSessionCookie(request);
   if (!sessionCookie) {
     const url = new URL('/', request.url);
-    url.searchParams.set('next', request.nextUrl.pathname);
+    // Preserve query string + hash so a deep-link with filters/pagination
+    // (e.g. /dashboard/members?role=teaching_assistant&page=2) survives the
+    // sign-in detour and lands back at the exact same view.
+    url.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
   return NextResponse.next();

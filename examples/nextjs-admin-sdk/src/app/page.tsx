@@ -19,8 +19,13 @@ export default async function HomePage({
   // `next` is set by the middleware when an unauthenticated request hits
   // a protected route — wire it through to better-auth's `callbackURL`
   // so the user lands back at the page they were trying to reach.
+  //
+  // Validate that `next` is a same-origin relative path: must start with
+  // `/` but NOT `//` (scheme-relative URLs like `//evil.example/foo` are
+  // an open-redirect vector — browsers treat them as cross-origin).
   const { next } = await searchParams;
-  const callbackURL = next && next.startsWith('/') ? next : '/dashboard';
+  const isSafeNext = typeof next === 'string' && next.startsWith('/') && !next.startsWith('//');
+  const callbackURL = isSafeNext ? next : '/dashboard';
 
   // The OAuth authorize endpoint for our provider — better-auth's
   // genericOAuth mounts this at /api/auth/sign-in/oauth2/<providerId>.
