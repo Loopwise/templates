@@ -32,6 +32,13 @@ export default async function HomePage({
   const signInHref = `/api/auth/sign-in/oauth2/loopwise?callbackURL=${encodeURIComponent(callbackURL)}`;
   const signOutHref = '/api/auth/sign-out';
 
+  // The plugin is only registered in lib/auth.ts when both env vars are
+  // set. Surface a clear setup notice if they aren't, instead of letting
+  // the user click sign-in and hit a 404.
+  const credsConfigured = Boolean(
+    process.env.LOOPWISE_CLIENT_ID && process.env.LOOPWISE_CLIENT_SECRET,
+  );
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-8">
       <div className="w-full max-w-md space-y-8">
@@ -74,6 +81,26 @@ export default async function HomePage({
                 </button>
               </form>
             </div>
+          </section>
+        ) : !credsConfigured ? (
+          <section className="space-y-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm dark:border-amber-900 dark:bg-amber-950">
+            <p className="font-medium text-amber-900 dark:text-amber-100">
+              Finish OAuth setup before signing in
+            </p>
+            <ol className="ml-4 list-decimal space-y-1 text-amber-800 dark:text-amber-200">
+              <li>
+                Copy the redirect URI printed at the dev-server boot log
+                (look for <code>[loopwise]</code>) into a new OAuth client at
+                your school&apos;s admin UI.
+              </li>
+              <li>
+                Paste the issued <code>client_id</code> and{' '}
+                <code>client_secret</code> into <code>.env.local</code> as{' '}
+                <code>LOOPWISE_CLIENT_ID</code> /{' '}
+                <code>LOOPWISE_CLIENT_SECRET</code>.
+              </li>
+              <li>Restart <code>pnpm dev</code>.</li>
+            </ol>
           </section>
         ) : (
           <section className="space-y-4">
