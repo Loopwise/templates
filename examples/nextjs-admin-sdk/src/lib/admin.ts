@@ -2,16 +2,8 @@
  * Build a `LoopwiseAdmin` client for the current request, using the
  * signed-in user's OAuth access token. Token refresh is handled by
  * better-auth's `getAccessToken` API — the SDK never sees an expired
- * token under normal operation.
- *
- * Usage in a server component:
- *
- *   import { headers } from 'next/headers';
- *   import { getAdminClient } from '@/lib/admin';
- *
- *   const admin = await getAdminClient(await headers());
- *   if (!admin) redirect('/');
- *   const { courses } = await admin.graphql<{...}>({ query: '...' });
+ * token under normal operation. Returns `null` if the caller has no
+ * Loopwise session (no token to use); callers redirect to `/` then.
  */
 
 import { createAdminClient, type LoopwiseAdmin } from '@loopwise/admin-sdk';
@@ -42,8 +34,8 @@ export async function getAdminClient(
   return createAdminClient({
     accessToken,
     baseURL: LOOPWISE_BASE_URL,
-    // If the cached token in better-auth's `account` table is missed and
-    // upstream returns 401, refresh by going back through better-auth.
+    // 401 retry path: re-fetch via better-auth (which will refresh if
+    // the stored token is now expired).
     refreshAccessToken: async () => {
       const { accessToken: fresh } = await auth.api.getAccessToken({
         body: { providerId: 'loopwise' },
