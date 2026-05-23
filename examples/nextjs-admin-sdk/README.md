@@ -136,19 +136,9 @@ const data = await admin.graphql<{ courses: { id: string; name: string }[] }>({
 
 ## Common gotchas
 
-- **`error=invalid_scope` after sign-in**: the OAuth client doesn't have
-  one of the requested scopes enabled. Either reduce the `scopes` list
-  in `lib/auth.ts` to only what your client allows, or enable the
-  missing scopes in your school's OAuth client UI and retry. (The plugin
-  defaults to `openid profile email` only, so this only bites when you
-  add API scopes.)
-- **`redirect_uri_mismatch`**: the registered redirect URI doesn't
-  exactly match what the server is sending. Compare what the boot log
-  printed against what's in the OAuth client — pay attention to the
-  `/oauth2/` segment.
-- **Tokens look "stuck" after changing scopes**: better-auth caches the
-  granted scope set on the `account` row. Sign out + sign in again to
-  pick up scope changes.
+See the [Admin SDK quickstart's gotchas section](../../docs/admin-sdk-quickstart.md#common-gotchas)
+for `invalid_scope`, `redirect_uri_mismatch`, and scope-cache pitfalls
+that apply to every integration (not just this template).
 
 ## Production notes
 
