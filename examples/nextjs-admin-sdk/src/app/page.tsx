@@ -9,12 +9,22 @@ import Link from 'next/link';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
   const session = await auth.api.getSession({ headers: await headers() });
+
+  // `next` is set by the middleware when an unauthenticated request hits
+  // a protected route — wire it through to better-auth's `callbackURL`
+  // so the user lands back at the page they were trying to reach.
+  const { next } = await searchParams;
+  const callbackURL = next && next.startsWith('/') ? next : '/dashboard';
 
   // The OAuth authorize endpoint for our provider — better-auth's
   // genericOAuth mounts this at /api/auth/sign-in/oauth2/<providerId>.
-  const signInHref = '/api/auth/sign-in/oauth2/loopwise';
+  const signInHref = `/api/auth/sign-in/oauth2/loopwise?callbackURL=${encodeURIComponent(callbackURL)}`;
   const signOutHref = '/api/auth/sign-out';
 
   return (
