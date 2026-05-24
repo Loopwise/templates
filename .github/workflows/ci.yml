@@ -13,9 +13,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Version is sourced from root package.json's `packageManager`
+      # field — don't pass `version:` here (conflicts → ERR_PNPM_BAD_PM_VERSION).
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
@@ -26,4 +26,18 @@ jobs:
 
       - run: pnpm type-check
 
+      # Placeholder env vars so the templates that read process.env at
+      # module-load time (nextjs-admin-sdk, nextjs) can complete `next
+      # build` static-page generation. CI verifies the build succeeds;
+      # actual values are supplied per-deployment, not here.
       - run: pnpm build
+        env:
+          # nextjs (next-auth based) template
+          LOOPWISE_SCHOOL_DOMAIN: demo.teachify.tw
+          AUTH_SECRET: placeholder_secret_at_least_32_chars_long_for_ci
+          AUTH_URL: http://localhost:3000
+          # nextjs-admin-sdk template
+          LOOPWISE_BASE_URL: https://demo.teachify.tw
+          BETTER_AUTH_URL: http://localhost:3000
+          BETTER_AUTH_SECRET: placeholder_secret_at_least_32_chars_long_for_ci
+          DATABASE_URL: file:./ci.db

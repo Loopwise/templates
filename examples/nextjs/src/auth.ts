@@ -10,7 +10,7 @@
  */
 
 import NextAuth from "next-auth";
-import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers";
+import type { OAuth2Config, OAuthUserConfig } from "next-auth/providers";
 import { refreshAccessToken } from "@/lib/loopwise";
 
 // ---------------------------------------------------------------------------
@@ -29,7 +29,7 @@ interface LoopwiseProfile {
 // ---------------------------------------------------------------------------
 function LoopwiseProvider(
   options: OAuthUserConfig<LoopwiseProfile>
-): OAuthConfig<LoopwiseProfile> {
+): OAuth2Config<LoopwiseProfile> {
   const schoolDomain = process.env.LOOPWISE_SCHOOL_DOMAIN;
   if (!schoolDomain) {
     throw new Error("LOOPWISE_SCHOOL_DOMAIN environment variable is required");
@@ -38,6 +38,11 @@ function LoopwiseProvider(
   const base = `https://${schoolDomain}`;
 
   return {
+    // `...options` first so its `clientId` / `clientSecret` are layered
+    // ON TOP of our defaults. Placing it last would also widen our
+    // `checks` literal via type inference (options.checks includes
+    // "nonce" from the OIDC union, which OAuth2Config rejects).
+    ...options,
     id: "loopwise",
     name: "Loopwise Connect",
     type: "oauth",
@@ -71,8 +76,6 @@ function LoopwiseProvider(
         role: profile.role,
       };
     },
-
-    ...options,
   };
 }
 
@@ -105,7 +108,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           school_subdomain: (account as Record<string, unknown>)
             .school_subdomain as string,
           scope: account.scope as string,
-          role: (profile as LoopwiseProfile).role,
+          // Auth.js's `Profile` is a wide superset; route through
+          // `unknown` since our `LoopwiseProfile` adds custom claims
+          // (avatar_url, role) that aren't in the base type.
+          role: (profile as unknown as LoopwiseProfile).role,
         };
       }
 

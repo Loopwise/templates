@@ -1,0 +1,89 @@
+// Prisma schema for the better-auth session store. The four required
+// tables (user, session, account, verification) follow better-auth's
+// adapter spec — see https://www.better-auth.com/docs/adapters/prisma
+//
+// `additionalFields` on the `user` model demonstrate the new
+// `mapProfileToUser` pass-through from @loopwise/admin-sdk@0.1.0-beta.3+:
+// the OAuth `sub` is written to `teachifyUserId` at sign-up.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id
+  // Nullable per better-auth's adapter spec — some OAuth providers
+  // return a profile without `name`, and we shouldn't fail sign-up.
+  name          String?
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Loopwise additionalField — populated by mapProfileToUser at sign-up.
+  // Matches the OAuth `sub` claim, so you can join your domain tables
+  // (orders, enrollments, …) by Loopwise user id without re-fetching.
+  teachifyUserId String? @unique
+
+  sessions Session[]
+  accounts Account[]
+}
+
+model Session {
+  id        String   @id
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // better-auth queries sessions by userId on every request; index it
+  // so this stays O(log n) once you have real volume.
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  // OAuth tokens — better-auth manages refresh transparently.
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  // For "list this user's linked OAuth accounts" lookups during sign-in
+  // + token refresh paths.
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Email verification + password reset flows query by identifier.
+  @@index([identifier])
+}
