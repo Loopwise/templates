@@ -3,7 +3,19 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "dist/**", ".vercel/**"]
+      "outputs": [".next/**", "dist/**", ".vercel/**"],
+      "env": [
+        "NODE_ENV",
+        "DATABASE_URL",
+        "AUTH_SECRET",
+        "AUTH_URL",
+        "BETTER_AUTH_URL",
+        "BETTER_AUTH_SECRET",
+        "LOOPWISE_BASE_URL",
+        "LOOPWISE_SCHOOL_DOMAIN",
+        "LOOPWISE_CLIENT_ID",
+        "LOOPWISE_CLIENT_SECRET"
+      ]
     },
     "type-check": {},
     "dev": {
