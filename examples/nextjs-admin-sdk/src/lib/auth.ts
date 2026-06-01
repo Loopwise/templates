@@ -34,6 +34,19 @@ if (!LOOPWISE_CLIENT_ID || !LOOPWISE_CLIENT_SECRET) {
   );
 }
 
+// Map a Loopwise role to your app's domain role. Built-in Loopwise
+// roles are ordered by privilege (owner > manager > admin > teacher >
+// teaching_assistant > student) and `profile.roles[0]` is the highest
+// the user holds — see https://docs.loopwise.com/guides/agent-integration
+const ROLE_MAP: Record<string, string> = {
+  owner: 'admin',
+  manager: 'admin',
+  admin: 'admin',
+  teacher: 'instructor',
+  teaching_assistant: 'instructor',
+  student: 'member',
+};
+
 const loopwisePlugin =
   LOOPWISE_CLIENT_ID && LOOPWISE_CLIENT_SECRET
     ? loopwise({
@@ -41,12 +54,21 @@ const loopwisePlugin =
         clientSecret: LOOPWISE_CLIENT_SECRET,
         baseURL: LOOPWISE_BASE_URL,
 
-        // Map the OIDC `sub` claim into our user row at sign-up. With this,
-        // querying `user.teachifyUserId` directly returns the Loopwise user
-        // id — no need to join the `account` table after the fact.
-        mapProfileToUser: (profile) => ({
-          teachifyUserId: profile.sub as string,
-        }),
+        // Map OIDC claims into our user row at sign-up. With this,
+        // every authenticated request can read `user.teachifyUserId`,
+        // `user.schoolId`, and `user.role` directly — no follow-up
+        // round-trip to Loopwise needed.
+        //
+        // `org_id` and `roles` are OIDC extension claims documented at
+        // https://docs.loopwise.com/reference/token-endpoints#userinfo-endpoint
+        mapProfileToUser: (profile) => {
+          const primaryLoopwiseRole = (profile.roles as string[] | undefined)?.[0];
+          return {
+            teachifyUserId: profile.sub as string,
+            schoolId: (profile.org_id as string | undefined) ?? null,
+            role: primaryLoopwiseRole ? (ROLE_MAP[primaryLoopwiseRole] ?? 'member') : 'member',
+          };
+        },
 
         // Default scopes are `openid profile email` — enough for SSO.
         // Uncomment and enable the matching scopes on your OAuth client
@@ -65,11 +87,14 @@ export const auth = betterAuth({
   secret: required('BETTER_AUTH_SECRET'),
   database: prismaAdapter(prisma, { provider: 'sqlite' }),
 
-  // Declare the custom column we'll populate from the OAuth profile.
-  // Prisma schema must include the matching `teachifyUserId String?` field.
+  // Declare the custom columns we'll populate from the OAuth profile.
+  // Prisma schema must include the matching `teachifyUserId`, `schoolId`,
+  // and `role` fields — see prisma/schema.prisma.
   user: {
     additionalFields: {
       teachifyUserId: { type: 'string', required: false },
+      schoolId: { type: 'string', required: false },
+      role: { type: 'string', required: false },
     },
   },
 
