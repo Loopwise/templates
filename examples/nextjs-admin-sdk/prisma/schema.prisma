@@ -41,7 +41,10 @@ model User {
   sessions Session[]
   accounts Account[]
 
-  // Most domain queries scope by (schoolId, role) — keep them fast.
+  // Most tenant queries filter by schoolId; `role` is coarse enough to
+  // filter in-app on the returned set, so a single-column index is
+  // enough for the template. Add a composite (schoolId, role) index
+  // later if you have a hot query that combines them.
   @@index([schoolId])
 }
 
