@@ -2,9 +2,11 @@
 // tables (user, session, account, verification) follow better-auth's
 // adapter spec — see https://www.better-auth.com/docs/adapters/prisma
 //
-// `additionalFields` on the `user` model demonstrate the new
-// `mapProfileToUser` pass-through from @loopwise/admin-sdk@0.1.0-beta.3+:
-// the OAuth `sub` is written to `teachifyUserId` at sign-up.
+// `additionalFields` on the `user` model demonstrate the
+// `mapProfileToUser` pass-through from @loopwise/admin-sdk:
+// - `teachifyUserId` ← OAuth `sub`
+// - `schoolId`       ← OAuth `org_id` extension claim
+// - `role`           ← derived from OAuth `roles[0]` via ROLE_MAP
 
 generator client {
   provider = "prisma-client-js"
@@ -26,13 +28,24 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Loopwise additionalField — populated by mapProfileToUser at sign-up.
-  // Matches the OAuth `sub` claim, so you can join your domain tables
-  // (orders, enrollments, …) by Loopwise user id without re-fetching.
+  // Loopwise additionalFields — populated by mapProfileToUser at sign-up.
+  // - teachifyUserId: matches the OAuth `sub` claim
+  // - schoolId:       OAuth `org_id` extension claim (which Loopwise school)
+  // - role:           derived from OAuth `roles[0]` via the ROLE_MAP in
+  //                   `src/lib/auth.ts` — your app's domain role, not the
+  //                   raw Loopwise role name
   teachifyUserId String? @unique
+  schoolId       String?
+  role           String?
 
   sessions Session[]
   accounts Account[]
+
+  // Most tenant queries filter by schoolId; `role` is coarse enough to
+  // filter in-app on the returned set, so a single-column index is
+  // enough for the template. Add a composite (schoolId, role) index
+  // later if you have a hot query that combines them.
+  @@index([schoolId])
 }
 
 model Session {

@@ -13,8 +13,11 @@ Next.js App Router app:
   the `loopwise()` plugin from `@loopwise/admin-sdk/better-auth`
 - **Read admin data** (courses, members) via the SDK's typed resources in
   React Server Components
-- **Map OAuth claims** to your own user table at sign-up
-  (`teachifyUserId` ← OAuth `sub`)
+- **Map OAuth claims** to your own user table at sign-up:
+  - `teachifyUserId` ← OAuth `sub`
+  - `schoolId` ← OAuth `org_id` extension claim
+  - `role` ← derived from `roles[0]` via a `ROLE_MAP` lookup
+    (see [agent-integration guide](https://docs.loopwise.com/guides/agent-integration))
 
 Session + accounts are stored in SQLite via Prisma. The access token
 lives server-side; the browser never sees it.
@@ -48,7 +51,8 @@ pnpm db:push
 ```
 
 Creates `dev.db` with the four better-auth tables (user, session,
-account, verification) + the `teachifyUserId` additional field.
+account, verification) + the `teachifyUserId` / `schoolId` / `role`
+additional fields on `user`.
 
 **4. Start the dev server**
 
