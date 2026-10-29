@@ -1,7 +1,7 @@
 /**
  * Better Auth catch-all handler. Mounted at `/api/auth/[...all]` so
  * better-auth controls every path under `/api/auth/*` — sign-in,
- * sign-out, OAuth callbacks (`/api/auth/oauth2/callback/loopwise`),
+ * sign-out, OAuth callbacks (`/api/auth/callback/loopwise`),
  * session, etc.
  */
 

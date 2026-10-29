@@ -15,13 +15,20 @@ const LOOPWISE_BASE_URL = required('LOOPWISE_BASE_URL');
 export async function getAdminClient(
   requestHeaders: Headers,
 ): Promise<LoopwiseAdmin | null> {
-  // `getAccessToken` auto-refreshes if the stored token is expired and
-  // writes the new token back to the `account` table — so the SDK call
-  // below always sees a fresh token.
+  // `getAccessToken` selects the account by better-auth's account row id,
+  // not by provider, so look up the user's Loopwise account first.
+  let accountId: string;
   let accessToken: string;
   try {
+    const accounts = await auth.api.listUserAccounts({ headers: requestHeaders });
+    const loopwiseAccount = accounts.find((a) => a.providerId === 'loopwise');
+    if (!loopwiseAccount) return null;
+    accountId = loopwiseAccount.id;
+
+    // Auto-refreshes if the stored token is expired and writes the new
+    // token back to the `account` table.
     const result = await auth.api.getAccessToken({
-      body: { providerId: 'loopwise' },
+      body: { accountId },
       headers: requestHeaders,
     });
     accessToken = result.accessToken;
@@ -38,7 +45,7 @@ export async function getAdminClient(
     // the stored token is now expired).
     refreshAccessToken: async () => {
       const { accessToken: fresh } = await auth.api.getAccessToken({
-        body: { providerId: 'loopwise' },
+        body: { accountId },
         headers: requestHeaders,
       });
       return fresh;
