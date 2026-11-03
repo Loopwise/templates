@@ -10,12 +10,15 @@ export function SignInButton({ callbackURL }: { callbackURL: string }) {
   async function signIn() {
     setPending(true);
     setError(null);
-    // Redirects the browser to Loopwise's authorize page on success.
-    const { error } = await authClient.signIn.social({ provider: 'loopwise', callbackURL });
-    if (error) {
+    try {
+      // Redirects the browser to Loopwise's authorize page on success.
+      const { error } = await authClient.signIn.social({ provider: 'loopwise', callbackURL });
+      if (!error) return;
       setError(error.message ?? 'Sign-in failed');
-      setPending(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Sign-in failed');
     }
+    setPending(false);
   }
 
   return (
