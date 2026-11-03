@@ -45,6 +45,10 @@ pnpm add @loopwise/admin-sdk better-auth
 
 (or `npm` / `yarn` / `bun` equivalent)
 
+`@loopwise/admin-sdk` 0.1.0-beta.5 requires `better-auth` 1.7.7 or
+later. Earlier versions are affected by
+[GHSA-965c-763c-88jm](https://github.com/better-auth/better-auth/security/advisories/GHSA-965c-763c-88jm).
+
 You'll also need a database for better-auth's session store —
 Prisma + SQLite is the easiest starting point; see the [Next.js example](../examples/nextjs-admin-sdk)
 for a working `schema.prisma`.
@@ -69,9 +73,8 @@ function required(name: string): string {
 
 const BETTER_AUTH_URL = required('BETTER_AUTH_URL'); // e.g. http://localhost:3000
 
-// Log the redirect URI you need to register on the OAuth client.
-// Note the `/oauth2/` segment — that's specific to better-auth's
-// generic-oauth plugin (different from many OAuth tutorial defaults).
+// Log the redirect URI you need to register on the OAuth client:
+// <BETTER_AUTH_URL>/api/auth/callback/loopwise
 console.log(
   `[loopwise] Register this redirect URI on the OAuth client:`,
   getLoopwiseRedirectURI({ baseURL: BETTER_AUTH_URL }),
@@ -124,7 +127,22 @@ Then start your dev server. The boot log prints the redirect URI;
 copy that URL into the OAuth client's "Redirect URI" field if you
 hadn't already.
 
-### 5. Read admin data
+### 5. Sign in
+
+The Loopwise provider is a regular better-auth social provider, so the
+browser starts the flow with `signIn.social`:
+
+```ts
+// lib/auth-client.ts
+import { createAuthClient } from 'better-auth/react';
+
+export const authClient = createAuthClient();
+
+// in a client component's click handler
+await authClient.signIn.social({ provider: 'loopwise', callbackURL: '/dashboard' });
+```
+
+### 6. Read admin data
 
 ```ts
 // somewhere on the server, after the user signs in
@@ -132,9 +150,16 @@ import { headers } from 'next/headers';
 import { createAdminClient } from '@loopwise/admin-sdk';
 import { auth } from '@/lib/auth';
 
+const requestHeaders = await headers();
+
+// getAccessToken selects the account by its better-auth row id.
+const accounts = await auth.api.listUserAccounts({ headers: requestHeaders });
+const loopwiseAccount = accounts.find((a) => a.providerId === 'loopwise');
+if (!loopwiseAccount) throw new Error('Not signed in with Loopwise');
+
 const { accessToken } = await auth.api.getAccessToken({
-  body: { providerId: 'loopwise' },
-  headers: await headers(),
+  body: { accountId: loopwiseAccount.id },
+  headers: requestHeaders,
 });
 
 const admin = createAdminClient({ accessToken, baseURL: process.env.LOOPWISE_BASE_URL! });
@@ -162,9 +187,15 @@ the browser.
   scopes in your school's admin UI and try again.
 - **`redirect_uri_mismatch`.** The redirect URI registered on the OAuth
   client doesn't exactly match what the server is sending. The path
-  is `/api/auth/oauth2/callback/loopwise` (note the `oauth2/`
-  segment) — easiest way to get this right is to print it via
-  `getLoopwiseRedirectURI()` and paste the output.
+  is `/api/auth/callback/loopwise` — easiest way to get this right is
+  to print it via `getLoopwiseRedirectURI()` and paste the output.
+- **Sign-in broke after upgrading to better-auth 1.7.** Before 1.7 the
+  callback was `/api/auth/oauth2/callback/loopwise`. A redirect URI
+  registered with that path must be re-registered with the new one on
+  every OAuth client (and every environment) you use; remove the old
+  URI once the upgrade is live. Also replace `signIn.oauth2(...)` with
+  `signIn.social({ provider: 'loopwise' })` and pass `accountId` (not
+  `providerId`) to `getAccessToken`.
 - **Scope changes don't take effect.** better-auth caches the granted
   scopes on the `account` row. Sign out + sign in again to pick up
   any change to the requested scope set.

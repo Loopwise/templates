@@ -63,12 +63,11 @@ pnpm dev
 You'll see a line like:
 
 ```
-[loopwise] OAuth redirect URI to register: http://localhost:3000/api/auth/oauth2/callback/loopwise
+[loopwise] OAuth redirect URI to register: http://localhost:3000/api/auth/callback/loopwise
 ```
 
 **Copy that URL** — you'll paste it into the OAuth client setup in the
-next step. Note the `/oauth2/callback/` segment; this is genuinely the
-correct path (different from many OAuth tutorial templates).
+next step.
 
 **5. Create the OAuth client in your Loopwise school**
 
@@ -106,10 +105,13 @@ back on the home page authenticated.
 src/
 ├── lib/
 │   ├── auth.ts          ← betterAuth({ plugins: [loopwise(...)] })
+│   ├── auth-client.ts   ← createAuthClient() for the browser
 │   └── admin.ts         ← getAdminClient(headers) factory
 ├── middleware.ts        ← protects /dashboard/*
 └── app/
-    ├── page.tsx                       ← landing + sign-in button
+    ├── page.tsx                       ← landing page
+    ├── sign-in-button.tsx             ← authClient.signIn.social({ provider: 'loopwise' })
+    ├── sign-out-button.tsx            ← authClient.signOut()
     ├── api/auth/[...all]/route.ts     ← better-auth catch-all
     └── dashboard/
         ├── page.tsx                   ← signed-in landing
@@ -137,6 +139,18 @@ const data = await admin.graphql<{ courses: { id: string; name: string }[] }>({
   query: `{ courses(perPage: 20) { id name } }`,
 });
 ```
+
+## Upgrading from an earlier version of this template
+
+This template now requires `better-auth` 1.7.7 or later and
+`@loopwise/admin-sdk` 0.1.0-beta.5. better-auth 1.7 moved the OAuth
+callback from `/api/auth/oauth2/callback/loopwise` to
+`/api/auth/callback/loopwise`, so a deployment upgraded from the older
+template fails sign-in with `redirect_uri_mismatch` until you add the
+new URI to your OAuth client at `https://<your-school>/oauth/applications`.
+Register it for every environment (local, preview, production) before
+deploying, then remove the old URI once the upgrade is live. The Prisma
+schema is unchanged.
 
 ## Common gotchas
 
